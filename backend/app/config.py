@@ -1,0 +1,1 @@
+# TODO: Load settings from .env using Pydantic BaseSettings (SECRET_KEY, DATABASE_URL)

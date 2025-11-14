@@ -1,0 +1,1 @@
+# TODO: get_current_user dependency - extract JWT token, validate, return User object

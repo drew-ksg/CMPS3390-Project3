@@ -1,0 +1,1 @@
+# TODO: Simulate order execution, validate buying power, manage virtual cash balance, check if user can afford trade
