@@ -3,11 +3,11 @@ from pydantic_settings import BaseSettings
 from functools import lru_cache
 
 class Settings(BaseSettings):
-    Database_URL: str
+    DATABASE_URL: str
     API_KEY: str
     SECRET_KEY: str
-    Algorithm: str = "H256"
-    Access_Token_Expire_Minutes: int = 30
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     class Config:
         env_file = ".env"
 
