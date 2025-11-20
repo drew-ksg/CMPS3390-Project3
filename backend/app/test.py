@@ -18,11 +18,19 @@ print(f"Base class: {Base}")
 print(f"SessionLocal: {SessionLocal}")
 print(f"get_db function: {get_db}") 
 """
-"""Testing models file"""
+"""Testing models file
 from backend.app.models import User, Transaction, TransactionType
 print(f"\n User table name: {User.__tablename__}")
 print(f" Transaction table name: {Transaction.__tablename__}")
 
 print(f"\n TransactionType.BUY: {TransactionType.BUY}")
 print(f" TransactionType.SELL: {TransactionType.SELL}")
+"""
+""" Testing schemas file"""
+from backend.app.schemas import (
+    UserCreate, UserResponse, Token, LoginRequest,
+    TransactionCreate, TransactionResponse, HoldingResponse
+)
+print(f"UserCreate fields: {UserCreate.model_fields.keys()}")
+print(f"TransactionCreate fields: {TransactionCreate.model_fields.keys()}")
 
