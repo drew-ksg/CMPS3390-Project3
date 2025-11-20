@@ -30,5 +30,12 @@ class Transaction(Base):
     date = Column(DateTime, default=datetime.now)
     user = relationship("User", back_populates="transactions")
 
+class Holding(Base):
+    __tablename__ = "holdings"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, index=True)
+    symbol = Column(String, index=True)
+    quantity = Column(Float, default=0.0)
+
 
 
