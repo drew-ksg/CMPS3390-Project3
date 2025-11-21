@@ -26,11 +26,32 @@ print(f" Transaction table name: {Transaction.__tablename__}")
 print(f"\n TransactionType.BUY: {TransactionType.BUY}")
 print(f" TransactionType.SELL: {TransactionType.SELL}")
 """
-""" Testing schemas file"""
+""" Testing schemas file
 from backend.app.schemas import (
     UserCreate, UserResponse, Token, LoginRequest,
     TransactionCreate, TransactionResponse, HoldingResponse
 )
 print(f"UserCreate fields: {UserCreate.model_fields.keys()}")
 print(f"TransactionCreate fields: {TransactionCreate.model_fields.keys()}")
+"""
+""" Testing auth file """
+from backend.app.auth import (
+    verify_password, 
+    get_password_hash, 
+    create_access_token, 
+    decode_access_token
+)
+# Test password hashing
+password = "mypassword123"
+hashed = get_password_hash(password)
+print(f"Original password: {password}")
+print(f"Hashed password: {hashed[:30]}...")
+print(f"Verify correct password: {verify_password(password, hashed)}")
+print(f"Verify wrong password: {verify_password('wrongpass', hashed)}")
+
+# Test JWT token
+token = create_access_token(data={"sub": "testuser"})
+print(f"JWT Token: {token[:50]}...")
+username = decode_access_token(token)
+print(f"Decoded username: {username}")
 
