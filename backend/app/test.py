@@ -34,7 +34,7 @@ from backend.app.schemas import (
 print(f"UserCreate fields: {UserCreate.model_fields.keys()}")
 print(f"TransactionCreate fields: {TransactionCreate.model_fields.keys()}")
 """
-""" Testing auth file """
+""" Testing auth file 
 from backend.app.auth import (
     verify_password, 
     get_password_hash, 
@@ -54,4 +54,11 @@ token = create_access_token(data={"sub": "testuser"})
 print(f"JWT Token: {token[:50]}...")
 username = decode_access_token(token)
 print(f"Decoded username: {username}")
+print(f" Type: {type(username)}")
+
+"""
+""" Testing dependencies file """
+from backend.app.dependencies import get_current_user, security
+print(f"Security object: {security}")
+print(f"get_current_user function: {get_current_user}")
 
