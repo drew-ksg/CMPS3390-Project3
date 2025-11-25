@@ -18,7 +18,7 @@ class UserController:
         db.add(db_user)
         db.commit()
         db.refresh(db_user)
-        return user
+        return db_user
     
     @staticmethod
     def get_user_by_username(db: Session, username: str) -> User:
@@ -49,9 +49,27 @@ class UserController:
     def get_user_transactions(db: Session, user_id: int) -> List[Transaction]:
         return db.query(Transaction).filter(Transaction.user_id == user_id).all()
     
+    
     @staticmethod
-    def get_user_holdings(db: Session, user_id: int) -> List[Transaction]:
+    def get_user_holdings(db: Session, user_id: int) -> List[HoldingResponse]:
         transactions = db.query(Transaction).filter(Transaction.user_id == user_id).all()
         holdings = {}
+
         for transaction in transactions:
-            
+            if transaction.symbol not in holdings:
+                holdings[transaction.symbol] = 0.0
+            if transaction.type == TransactionType.BUY:
+                holdings[transaction.symbol] += transaction.quantity
+            elif transaction.type == TransactionType.SELL:
+                holdings[transaction.symbol] -= transaction.quantity
+
+        return [
+            HoldingResponse(
+                symbol=symbol,
+                total_quantity=quantity,
+                average_price=0.0,
+                total_cost=0.0
+            )
+            for symbol, quantity in holdings.items()
+            if quantity > 0
+        ]

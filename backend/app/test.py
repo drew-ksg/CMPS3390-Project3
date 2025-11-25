@@ -57,8 +57,27 @@ print(f"Decoded username: {username}")
 print(f" Type: {type(username)}")
 
 """
-""" Testing dependencies file """
+""" Testing dependencies file 
 from backend.app.dependencies import get_current_user, security
 print(f"Security object: {security}")
 print(f"get_current_user function: {get_current_user}")
+"""
+""" Testing user controller file """
+from backend.app.controllers.user_controller import UserController
+print(f"UserController class: {UserController}")    
+methods = [
+    'create_user',
+    'get_user_by_username',
+    'get_user_by_email',
+    'add_transaction',
+    'get_user_transactions',
+    'get_user_holdings'
+]
+
+print("\n📋 Methods:")
+for method in methods:
+    if hasattr(UserController, method):
+        print(f"{method}")
+    else:
+        print(f"{method} - MISSING!")
 
