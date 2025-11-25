@@ -62,7 +62,7 @@ from backend.app.dependencies import get_current_user, security
 print(f"Security object: {security}")
 print(f"get_current_user function: {get_current_user}")
 """
-""" Testing user controller file """
+""" Testing user controller file 
 from backend.app.controllers.user_controller import UserController
 print(f"UserController class: {UserController}")    
 methods = [
@@ -73,11 +73,16 @@ methods = [
     'get_user_transactions',
     'get_user_holdings'
 ]
-
-print("\n📋 Methods:")
+print("Methods:")
 for method in methods:
     if hasattr(UserController, method):
         print(f"{method}")
     else:
         print(f"{method} - MISSING!")
-
+"""
+""" Testing auth routes file """
+from backend.app.routes.auth_routes import router
+print(f"Router: {router}")
+print(f"Prefix: {router.prefix}")
+print(f"Tags: {router.tags}")
+print(f"Routes: {[route.path for route in router.routes]}")
