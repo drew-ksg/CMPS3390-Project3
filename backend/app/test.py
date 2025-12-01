@@ -87,9 +87,10 @@ print(f"Prefix: {router.prefix}")
 print(f"Tags: {router.tags}")
 print(f"Routes: {[route.path for route in router.routes]}")
 """
-""" Testing user routes file """
+""" Testing user routes file 
 from backend.app.routes.user_routes import router
 print(f"\n Router: {router}")
 print(f"Prefix: {router.prefix}")
 print(f"Tags: {router.tags}")
 print(f"Routes: {[f'{route.methods} {route.path}' for route in router.routes]}")
+"""
