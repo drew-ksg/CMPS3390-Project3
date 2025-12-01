@@ -94,3 +94,9 @@ print(f"Prefix: {router.prefix}")
 print(f"Tags: {router.tags}")
 print(f"Routes: {[f'{route.methods} {route.path}' for route in router.routes]}")
 """
+""" Testing main file """
+from backend.app.main import app
+print(f"FastAPI app: {app}")
+print(f"Title: {app.title}")
+print(f"Version: {app.version}")
+print(f"Routes: {[route.path for route in app.routes]}")

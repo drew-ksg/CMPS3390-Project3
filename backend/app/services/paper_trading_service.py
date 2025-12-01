@@ -2,8 +2,8 @@
 # backend/app/services/paper_trading_service.py
 
 from sqlalchemy import func
-from app.models import Transaction
-from app.models import Holding 
+from ..models import Transaction
+from ..models import Holding 
 
 class PaperTradingService:
     """Handles paper trading validation and execution"""

@@ -1,8 +1,8 @@
 # backend/app/controllers/portfolio_controller.py
 
 from sqlalchemy import func
-from app.models import Transaction
-from app.services.paper_trading_service import PaperTradingService
+from ..models import Transaction
+from ..services.paper_trading_service import PaperTradingService
 
 
 class PortfolioController:
