@@ -80,9 +80,16 @@ for method in methods:
     else:
         print(f"{method} - MISSING!")
 """
-""" Testing auth routes file """
+""" Testing auth routes file 
 from backend.app.routes.auth_routes import router
 print(f"Router: {router}")
 print(f"Prefix: {router.prefix}")
 print(f"Tags: {router.tags}")
 print(f"Routes: {[route.path for route in router.routes]}")
+"""
+""" Testing user routes file """
+from backend.app.routes.user_routes import router
+print(f"\n Router: {router}")
+print(f"Prefix: {router.prefix}")
+print(f"Tags: {router.tags}")
+print(f"Routes: {[f'{route.methods} {route.path}' for route in router.routes]}")
