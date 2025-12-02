@@ -1,6 +1,8 @@
 # TODO: FastAPI app initialization, include routers, CORS middleware, create DB tables
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.templating import Jinja2Templates
+from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from .database import Base, engine
 from .routes import auth_routes, user_routes, portfolio_routes
@@ -8,6 +10,8 @@ from .routes import auth_routes, user_routes, portfolio_routes
 
 Base.metadata.create_all(bind=engine)
 app = FastAPI(title="Stock Tracker API", version="1.0.0")
+
+templates = Jinja2Templates(directory="app/templates")
 
 app.add_middleware(
     CORSMiddleware,

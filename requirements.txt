@@ -6,5 +6,5 @@ passlib[bcrypt]
 PyJWT
 requests
 pydantic
-httpx
 pydantic-settings
+email-validator
