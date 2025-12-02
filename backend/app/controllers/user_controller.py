@@ -56,20 +56,37 @@ class UserController:
         holdings = {}
 
         for transaction in transactions:
-            if transaction.symbol not in holdings:
-                holdings[transaction.symbol] = 0.0
-            if transaction.type == TransactionType.BUY:
-                holdings[transaction.symbol] += transaction.quantity
-            elif transaction.type == TransactionType.SELL:
-                holdings[transaction.symbol] -= transaction.quantity
+            symbol=  transaction.symbol
 
+            if symbol not in holdings:
+                holdings[symbol] = {
+                    "quantity": 0,
+                    "cost": 0.0
+                }
+
+            if transaction.type == TransactionType.BUY:
+                holdings[symbol]["quantity"] += transaction.quantity
+                holdings[symbol]["cost"] += transaction.quantity * transaction.price
+
+            elif transaction.type == TransactionType.SELL:
+                holdings[symbol]["quantity"] -= transaction.quantity
+                if holdings[symbol]["quantity"] > 0:
+                    avg_cost = holdings[symbol]["cost"] / (holdings[symbol]["quantity"] + transaction.quantity)
+                    holdings[symbol]["cost"] -= avg_cost * transaction.quantity
+                else:
+                    holdings[symbol]["cost"] = 0
         return [
             HoldingResponse(
-                symbol=symbol,
-                total_quantity=quantity,
-                average_price=0.0,
-                total_cost=0.0
-            )
-            for symbol, quantity in holdings.items()
-            if quantity > 0
-        ]
+                    symbol=symbol,
+                    total_quantity=data["quantity"],
+                    average_price=(data["cost"] / data["quantity"]) if data["quantity"] > 0 else 0.0,
+                    total_cost=data["cost"]
+                )
+                for symbol, data in holdings.items()
+                if data["quantity"] > 0
+            ]
+                    
+
+                    
+
+        
