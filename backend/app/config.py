@@ -1,6 +1,7 @@
 # TODO: Load settings from .env using Pydantic BaseSettings (SECRET_KEY, DATABASE_URL)
 from pydantic_settings import BaseSettings
 from functools import lru_cache
+from pathlib import Path
 
 class Settings(BaseSettings):
     DATABASE_URL: str
@@ -9,7 +10,7 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     class Config:
-        env_file = "app/.env"
+        env_file = str(Path(__file__).resolve().parent / ".env")
 
 @lru_cache()
 def get_settings() -> Settings:
