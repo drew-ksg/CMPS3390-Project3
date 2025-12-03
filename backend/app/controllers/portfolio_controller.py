@@ -1,6 +1,6 @@
 from sqlalchemy import func
 from ..models import Transaction, Holding, TransactionType
-from ..services.paper_trading_service import PaperTradingService
+from ..services.stock_api import PaperTradingService
 
 
 class PortfolioController:
