@@ -1,6 +1,8 @@
 from sqlalchemy import func
 from ..models import Transaction, Holding, TransactionType
-from ..services.stock_api import PaperTradingService
+from ..services.paper_trading_service import PaperTradingService
+from ..services.stock_api import API
+from fastapi import HTTPException
 
 
 class PortfolioController:
@@ -24,13 +26,17 @@ class PortfolioController:
 
         for h in holdings:
             # latest price = latest transaction price
-            latest_price = (
-                db.query(Transaction.price)
-                .filter(Transaction.user_id == user_id, Transaction.symbol == h.symbol)
-                .order_by(Transaction.date.desc())
-                .first()
-            )
-            current_price = latest_price[0] if latest_price else 0
+            try:
+                price_data = API.get_stock_price(h.symbol)
+                current_price = price_data.get("close", 0)
+            except HTTPException as e:
+                latest_price = (
+                    db.query(Transaction.price)
+                    .filter(Transaction.user_id == user_id, Transaction.symbol == h.symbol)
+                    .order_by(Transaction.date.desc())
+                    .first()
+                )
+                current_price = latest_price[0] if latest_price else 0
             position_value = h.quantity * current_price
 
             detailed_positions.append({

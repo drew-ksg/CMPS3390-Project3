@@ -6,7 +6,9 @@ from ..database import get_db
 from ..dependencies import get_current_user
 from ..models import User
 from ..controllers.portfolio_controller import PortfolioController
-from ..services.stock_api import PaperTradingService
+from ..services.paper_trading_service import PaperTradingService
+from ..services.stock_api import API
+
 
 router = APIRouter(prefix="/api/portfolio", tags=["portfolio"])
 
