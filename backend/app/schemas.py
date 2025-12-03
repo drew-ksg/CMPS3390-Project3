@@ -57,5 +57,9 @@ class HoldingResponse(BaseModel):
     average_price: float
     total_cost: float
 
+class Trade(BaseModel):
+    symbol: str
+    trade_type: str
+    quantity: float
 
 

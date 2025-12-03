@@ -1,6 +1,7 @@
 from sqlalchemy import func
 from ..models import Transaction, Holding, TransactionType
-
+from ..services.stock_api import API
+from fastapi import HTTPException
 
 class PaperTradingService:
     """Handles paper trading validation and execution"""
@@ -45,22 +46,32 @@ class PaperTradingService:
         return holding is not None and holding.quantity >= quantity
 
     @staticmethod
-    def execute_trade(db, user_id: int, symbol: str, trade_type: str, quantity: float, price: float):
-        """Executes a trade, updates transactions + holdings."""
+    def execute_trade(db, user_id: int, symbol: str, trade_type: str, quantity: float):
+        """Executes a trade, fetches live price, and updates transactions + holdings."""
+
+        # Get live price
+        try:
+            price_data = API.get_stock_price(symbol)
+            price = price_data.get("close")
+            if price is None:
+                raise ValueError("Price not found in API response.")
+        except Exception as e:
+            return {"success": False, "message": f"Failed to fetch live price for {symbol}: {e}"}
 
         cash_balance = PaperTradingService.get_cash_balance(db, user_id)
 
-        # Validate buy
-        if trade_type == "BUY":
-            if not PaperTradingService.validate_buy_order(cash_balance, quantity, price):
+        # Validate trade
+        if trade_type.upper() == "BUY":
+            if cash_balance < quantity * price:
                 return {"success": False, "message": "Insufficient cash."}
             tx_type = TransactionType.BUY
-
-        # Validate sell
-        elif trade_type == "SELL":
-            if not PaperTradingService.validate_sell_order(db, user_id, symbol, quantity):
+        elif trade_type.upper() == "SELL":
+            holding = db.query(Holding).filter(Holding.user_id == user_id, Holding.symbol == symbol).first()
+            if not holding or holding.quantity < quantity:
                 return {"success": False, "message": "Not enough shares."}
             tx_type = TransactionType.SELL
+        else:
+            return {"success": False, "message": "Invalid trade type."}
 
         # Record transaction
         new_tx = Transaction(
@@ -73,12 +84,7 @@ class PaperTradingService:
         db.add(new_tx)
 
         # Update holdings
-        holding = (
-            db.query(Holding)
-            .filter(Holding.user_id == user_id, Holding.symbol == symbol)
-            .first()
-        )
-
+        holding = db.query(Holding).filter(Holding.user_id == user_id, Holding.symbol == symbol).first()
         if tx_type == TransactionType.BUY:
             if holding:
                 holding.quantity += quantity
@@ -91,8 +97,4 @@ class PaperTradingService:
 
         db.commit()
 
-        return {
-            "success": True,
-            "message": f"{trade_type} executed successfully.",
-            "transaction_id": new_tx.id
-        }
+        return {"success": True, "message": f"{trade_type} executed successfully.", "transaction_id": new_tx.id, "price": price}

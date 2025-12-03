@@ -8,6 +8,7 @@ from ..models import User
 from ..controllers.portfolio_controller import PortfolioController
 from ..services.paper_trading_service import PaperTradingService
 from ..services.stock_api import API
+from ..schemas import Trade
 
 
 router = APIRouter(prefix="/api/portfolio", tags=["portfolio"])
@@ -88,3 +89,12 @@ def validate_trade(
 
     return {"valid": valid}
 # =============================================================================
+@router.post("/trade")
+def execute_trade(
+    trade: Trade,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """POST /api/portfolio/execute-trade"""
+    result = PaperTradingService.execute_trade(db, current_user.id, trade.symbol, trade.trade_type, trade.quantity)
+    return result
