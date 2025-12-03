@@ -34,5 +34,10 @@ async def root():
 def home(request: Request):
     return templates.TemplateResponse("register.html", {"request": request})
 
+@app.get("/dashboard", response_class=HTMLResponse)
+def dashboard(request: Request):
+    return templates.TemplateResponse("dashboard.html", {"request": request})
+
+
 
 
