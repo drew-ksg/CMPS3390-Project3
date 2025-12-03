@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>{% block title %}Stock Tracker{% endblock %}</title>
+
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- TailwindCSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Custom Tailwind Config -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#111111",   // black
+                        secondary: "#2d2d2d", // dark grey
+                        accent: "#22c55e",    // green-500
+                    }
+                }
+            }
+        }
+    </script>
+
+    {% block head %}{% endblock %}
+</head>
+
+<body class="bg-primary text-gray-200">
+
+    <!-- NAVIGATION BAR -->
+    <nav class="bg-secondary shadow-lg py-4 px-6 border-b border-accent">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+
+            <!-- Branding -->
+            <a href="/" class="text-2xl font-bold text-accent">
+                Stock Tracker
+            </a>
+
+            <!-- Jinja nav block -->
+            <div class="space-x-6">
+                {% block nav_items %}
+                {% endblock %}
+            </div>
+
+        </div>
+    </nav>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="max-w-6xl mx-auto mt-10 p-6 bg-secondary rounded-lg shadow-xl border border-gray-700">
+
+        {% block content %}
+        {% endblock %}
+
+    </main>
+
+    {% block scripts %}
+    {% endblock %}
+
+</body>
+</html>
