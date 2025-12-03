@@ -1,0 +1,252 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard — Stock Tracker{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto py-8 px-4">
+
+  <!-- TOP SUMMARY -->
+  <section class="mb-8 text-center">
+    <div class="inline-block text-left">
+      <div class="flex items-baseline gap-4">
+        <h1 id="total-value" class="text-5xl font-extrabold text-accent">$0.00</h1>
+        <div id="daily-change" class="text-lg text-gray-400 mt-2">+0.00 (0.00%)</div>
+      </div>
+      <div class="mt-2 text-sm text-gray-500">Total portfolio value (cash + positions)</div>
+    </div>
+  </section>
+
+  <!-- CHART CARD -->
+  <section class="mb-8 bg-secondary border border-gray-700 rounded-lg p-5 shadow-sm">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-lg font-semibold text-gray-200">Portfolio Performance</h2>
+      <div class="text-sm text-gray-400">Updated live</div>
+    </div>
+
+    <div class="w-full h-64">
+      <canvas id="portfolioChart" class="w-full h-full"></canvas>
+    </div>
+  </section>
+
+  <!-- POSITIONS -->
+  <section class="bg-secondary border border-gray-700 rounded-lg p-5 shadow-sm">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-lg font-semibold text-gray-200">Positions</h2>
+      <div class="text-sm text-gray-400">Hover rows for details</div>
+    </div>
+
+    <!-- HTMX-ready container -->
+    <div id="positions-container"
+         hx-trigger="none"
+         hx-swap="innerHTML"
+         class="overflow-x-auto">
+      <!-- JS will inject table here -->
+      <table id="positions-table" class="min-w-full text-left">
+        <thead class="text-gray-400 border-b border-gray-700">
+          <tr>
+            <th class="py-3 px-2">Symbol</th>
+            <th class="py-3 px-2">Quantity</th>
+            <th class="py-3 px-2">Avg Cost</th>
+            <th class="py-3 px-2">Current</th>
+            <th class="py-3 px-2">Market Value</th>
+            <th class="py-3 px-2">P/L</th>
+          </tr>
+        </thead>
+        <tbody id="positions-body" class="divide-y divide-gray-800">
+          <!-- injected rows -->
+        </tbody>
+      </table>
+      <div id="no-positions" class="text-gray-400 py-6 text-center hidden">No positions yet.</div>
+    </div>
+  </section>
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ---------- Utilities ----------
+function fmtMoney(n) {
+  if (n === null || n === undefined) return "$0.00";
+  return "$" + Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function fmtPct(n) {
+  return (n >= 0 ? "+" : "") + Number(n).toFixed(2) + "%";
+}
+function colorizePL(el, value) {
+  if (value > 0) el.className = "text-green-400 font-medium";
+  else if (value < 0) el.className = "text-red-400 font-medium";
+  else el.className = "text-gray-300";
+}
+
+// ---------- Load summary (top numbers) ----------
+async function loadSummary() {
+  try {
+    const res = await fetch("/api/portfolio/summary");
+    if (!res.ok) throw new Error("summary fetch failed");
+    const data = await res.json();
+
+    // total value
+    const total = data.total_value ?? ( (data.cash_balance ?? 0) + (data.portfolio_value ?? 0) );
+    document.getElementById("total-value").innerText = fmtMoney(total);
+
+    // compute daily change 
+    // we'll attempt to derive percent using portfolio_value vs invested
+    let dailyEl = document.getElementById("daily-change");
+    // if controller doesn't send percent, show change from previous (not implemented).
+    if (data.portfolio_value !== undefined && data.positions) {
+      // approximate daily P/L as 0
+      dailyEl.innerText = ""; // blank by default
+    } else {
+      dailyEl.innerText = "";
+    }
+
+  } catch (err) {
+    console.error("loadSummary error", err);
+  }
+}
+
+// ---------- Load positions and render table ----------
+async function loadPositions() {
+  try {
+    const res = await fetch("/api/portfolio/positions");
+    if (!res.ok) throw new Error("positions fetch failed");
+    // the /positions route returns the portfolio summary when no symbol,
+    // so we read data.positions
+    const data = await res.json();
+    const positions = data.positions ?? [];
+
+    const tbody = document.getElementById("positions-body");
+    tbody.innerHTML = "";
+
+    if (!positions.length) {
+      document.getElementById("positions-table").classList.add("hidden");
+      document.getElementById("no-positions").classList.remove("hidden");
+      return;
+    } else {
+      document.getElementById("positions-table").classList.remove("hidden");
+      document.getElementById("no-positions").classList.add("hidden");
+    }
+
+    for (const p of positions) {
+      const tr = document.createElement("tr");
+      tr.className = "hover:bg-gray-800";
+
+      // symbol
+      const tdSym = document.createElement("td");
+      tdSym.className = "py-3 px-2 font-medium text-gray-100";
+      tdSym.innerText = p.symbol ?? "";
+
+      // qty
+      const tdQty = document.createElement("td");
+      tdQty.className = "py-3 px-2 text-gray-300";
+      tdQty.innerText = (p.quantity ?? 0).toLocaleString();
+
+      // avg cost (controller may not return avg; fallback to 0)
+      const tdAvg = document.createElement("td");
+      tdAvg.className = "py-3 px-2 text-gray-300";
+      tdAvg.innerText = fmtMoney(p.avg_cost_basis ?? p.avg_cost ?? 0);
+
+      // current price
+      const tdCur = document.createElement("td");
+      tdCur.className = "py-3 px-2 text-gray-300";
+      tdCur.innerText = fmtMoney(p.current_price ?? 0);
+
+      // market value
+      const tdVal = document.createElement("td");
+      tdVal.className = "py-3 px-2 text-gray-300";
+      const mval = (p.position_value ?? ( (p.quantity ?? 0) * (p.current_price ?? 0) ));
+      tdVal.innerText = fmtMoney(mval);
+
+      // P/L
+      const tdPL = document.createElement("td");
+      tdPL.className = "py-3 px-2";
+      const pl = (p.total_profit_loss ?? ( (p.quantity ?? 0) * ((p.current_price ?? 0) - (p.avg_cost_basis ?? p.avg_cost ?? 0)) ));
+      tdPL.innerText = fmtMoney(pl);
+      colorizePL(tdPL, pl);
+
+      // Append
+      tr.appendChild(tdSym);
+      tr.appendChild(tdQty);
+      tr.appendChild(tdAvg);
+      tr.appendChild(tdCur);
+      tr.appendChild(tdVal);
+      tr.appendChild(tdPL);
+
+      tbody.appendChild(tr);
+    }
+
+  } catch (err) {
+    console.error("loadPositions err", err);
+  }
+}
+
+// ---------- Load chart data & render Chart.js ----------
+let portfolioChart = null;
+async function loadChart() {
+  try {
+    const res = await fetch("/api/portfolio/performance");
+    if (!res.ok) throw new Error("chart fetch failed");
+    const data = await res.json(); // expecting [{date, value}, ...]
+
+    const labels = data.map(d => d.date);
+    const values = data.map(d => Number(d.value ?? 0));
+
+    const ctx = document.getElementById('portfolioChart').getContext('2d');
+
+    if (portfolioChart) portfolioChart.destroy();
+
+    portfolioChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Portfolio Value',
+          data: values,
+          fill: true,
+          borderWidth: 2,
+          borderColor: '#22c55e',
+          backgroundColor: 'rgba(34,197,94,0.08)',
+          tension: 0.25,
+          pointRadius: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const v = context.parsed.y;
+                return fmtMoney(v);
+              }
+            }
+          }
+        },
+        scales: {
+          x: { ticks: { color: '#9ca3af' }, grid: { color: 'transparent' } },
+          y: { ticks: { color: '#9ca3af' }, grid: { color: '#1f2937' } }
+        }
+      }
+    });
+
+  } catch (err) {
+    console.error("loadChart err", err);
+  }
+}
+
+// ---------- Initial load & refresh ----------
+async function refreshAll() {
+  await Promise.all([ loadSummary(), loadPositions(), loadChart() ]);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  refreshAll();
+  // refresh periodically
+  setInterval(refreshAll, 60000); // every 60s
+});
+</script>
+{% endblock %}
