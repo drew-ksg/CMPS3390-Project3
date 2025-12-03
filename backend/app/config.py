@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     class Config:
-        env_file = str(Path(__file__).resolve().parent / ".env")
+         env_file = str(Path(__file__).resolve().parent / ".env")
 
 @lru_cache()
 def get_settings() -> Settings:
