@@ -66,10 +66,27 @@
 
 {% block scripts %}
 <script>
-// ---------- Utilities ----------
+// --------------------------------------
+// Helpers
+// --------------------------------------
+function getToken() {
+  return localStorage.getItem("jwt");
+}
+
+function authHeaders() {
+  const token = getToken();
+  return {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${token}`
+  };
+}
+
 function fmtMoney(n) {
   if (n === null || n === undefined) return "$0.00";
-  return "$" + Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return "$" + Number(n).toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
 }
 function fmtPct(n) {
   return (n >= 0 ? "+" : "") + Number(n).toFixed(2) + "%";
@@ -80,40 +97,44 @@ function colorizePL(el, value) {
   else el.className = "text-gray-300";
 }
 
-// ---------- Load summary (top numbers) ----------
+// --------------------------------------
+// Load Summary
+// --------------------------------------
 async function loadSummary() {
   try {
-    const res = await fetch("/api/portfolio/summary");
+    const res = await fetch("/api/portfolio/summary", {
+      method: "GET",
+      headers: authHeaders()
+    });
+
     if (!res.ok) throw new Error("summary fetch failed");
+
     const data = await res.json();
 
-    // total value
-    const total = data.total_value ?? ( (data.cash_balance ?? 0) + (data.portfolio_value ?? 0) );
+    const total = data.total_value ??
+      (data.cash_balance ?? 0) +
+      (data.portfolio_value ?? 0);
+
     document.getElementById("total-value").innerText = fmtMoney(total);
 
-    // compute daily change 
-    // we'll attempt to derive percent using portfolio_value vs invested
-    let dailyEl = document.getElementById("daily-change");
-    // if controller doesn't send percent, show change from previous (not implemented).
-    if (data.portfolio_value !== undefined && data.positions) {
-      // approximate daily P/L as 0
-      dailyEl.innerText = ""; // blank by default
-    } else {
-      dailyEl.innerText = "";
-    }
-
+    document.getElementById("daily-change").innerText = "";
   } catch (err) {
     console.error("loadSummary error", err);
   }
 }
 
-// ---------- Load positions and render table ----------
+// --------------------------------------
+// Load Positions
+// --------------------------------------
 async function loadPositions() {
   try {
-    const res = await fetch("/api/portfolio/positions");
+    const res = await fetch("/api/portfolio/positions", {
+      method: "GET",
+      headers: authHeaders()
+    });
+
     if (!res.ok) throw new Error("positions fetch failed");
-    // the /positions route returns the portfolio summary when no symbol,
-    // so we read data.positions
+
     const data = await res.json();
     const positions = data.positions ?? [];
 
@@ -124,71 +145,55 @@ async function loadPositions() {
       document.getElementById("positions-table").classList.add("hidden");
       document.getElementById("no-positions").classList.remove("hidden");
       return;
-    } else {
-      document.getElementById("positions-table").classList.remove("hidden");
-      document.getElementById("no-positions").classList.add("hidden");
     }
 
-    for (const p of positions) {
+    document.getElementById("positions-table").classList.remove("hidden");
+    document.getElementById("no-positions").classList.add("hidden");
+
+    positions.forEach(p => {
       const tr = document.createElement("tr");
       tr.className = "hover:bg-gray-800";
 
-      // symbol
-      const tdSym = document.createElement("td");
-      tdSym.className = "py-3 px-2 font-medium text-gray-100";
-      tdSym.innerText = p.symbol ?? "";
+      const mval = p.position_value ?? (p.quantity * p.current_price);
+      const avg = p.avg_cost_basis ?? p.avg_cost ?? 0;
+      const pl = p.total_profit_loss ?? (p.quantity * (p.current_price - avg));
 
-      // qty
-      const tdQty = document.createElement("td");
-      tdQty.className = "py-3 px-2 text-gray-300";
-      tdQty.innerText = (p.quantity ?? 0).toLocaleString();
-
-      // avg cost (controller may not return avg; fallback to 0)
-      const tdAvg = document.createElement("td");
-      tdAvg.className = "py-3 px-2 text-gray-300";
-      tdAvg.innerText = fmtMoney(p.avg_cost_basis ?? p.avg_cost ?? 0);
-
-      // current price
-      const tdCur = document.createElement("td");
-      tdCur.className = "py-3 px-2 text-gray-300";
-      tdCur.innerText = fmtMoney(p.current_price ?? 0);
-
-      // market value
-      const tdVal = document.createElement("td");
-      tdVal.className = "py-3 px-2 text-gray-300";
-      const mval = (p.position_value ?? ( (p.quantity ?? 0) * (p.current_price ?? 0) ));
-      tdVal.innerText = fmtMoney(mval);
-
-      // P/L
-      const tdPL = document.createElement("td");
-      tdPL.className = "py-3 px-2";
-      const pl = (p.total_profit_loss ?? ( (p.quantity ?? 0) * ((p.current_price ?? 0) - (p.avg_cost_basis ?? p.avg_cost ?? 0)) ));
-      tdPL.innerText = fmtMoney(pl);
-      colorizePL(tdPL, pl);
-
-      // Append
-      tr.appendChild(tdSym);
-      tr.appendChild(tdQty);
-      tr.appendChild(tdAvg);
-      tr.appendChild(tdCur);
-      tr.appendChild(tdVal);
-      tr.appendChild(tdPL);
+      tr.innerHTML = `
+        <td class="py-3 px-2 font-medium text-gray-100">${p.symbol}</td>
+        <td class="py-3 px-2 text-gray-300">${p.quantity}</td>
+        <td class="py-3 px-2 text-gray-300">${fmtMoney(avg)}</td>
+        <td class="py-3 px-2 text-gray-300">${fmtMoney(p.current_price)}</td>
+        <td class="py-3 px-2 text-gray-300">${fmtMoney(mval)}</td>
+        <td class="py-3 px-2 text-gray-300" id="pl-${p.symbol}">${fmtMoney(pl)}</td>
+      `;
 
       tbody.appendChild(tr);
-    }
+
+      // Colorize PL
+      const plEl = document.getElementById(`pl-${p.symbol}`);
+      colorizePL(plEl, pl);
+    });
 
   } catch (err) {
     console.error("loadPositions err", err);
   }
 }
 
-// ---------- Load chart data & render Chart.js ----------
+// --------------------------------------
+// Load Chart
+// --------------------------------------
 let portfolioChart = null;
+
 async function loadChart() {
   try {
-    const res = await fetch("/api/portfolio/performance");
+    const res = await fetch("/api/portfolio/performance", {
+      method: "GET",
+      headers: authHeaders()
+    });
+
     if (!res.ok) throw new Error("chart fetch failed");
-    const data = await res.json(); // expecting [{date, value}, ...]
+
+    const data = await res.json();
 
     const labels = data.map(d => d.date);
     const values = data.map(d => Number(d.value ?? 0));
@@ -215,17 +220,7 @@ async function loadChart() {
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: function(context) {
-                const v = context.parsed.y;
-                return fmtMoney(v);
-              }
-            }
-          }
-        },
+        plugins: { legend: { display: false } },
         scales: {
           x: { ticks: { color: '#9ca3af' }, grid: { color: 'transparent' } },
           y: { ticks: { color: '#9ca3af' }, grid: { color: '#1f2937' } }
@@ -238,15 +233,26 @@ async function loadChart() {
   }
 }
 
-// ---------- Initial load & refresh ----------
+// --------------------------------------
+// Init
+// --------------------------------------
 async function refreshAll() {
-  await Promise.all([ loadSummary(), loadPositions(), loadChart() ]);
+  await Promise.all([
+    loadSummary(),
+    loadPositions(),
+    loadChart()
+  ]);
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  const token = getToken();
+  if (!token) {
+    window.location.href = "/login";
+    return;
+  }
+
   refreshAll();
-  // refresh periodically
-  setInterval(refreshAll, 60000); // every 60s
+  setInterval(refreshAll, 60000);
 });
 </script>
 {% endblock %}
