@@ -37,7 +37,7 @@
 
     <!-- NAVIGATION BAR -->
     <nav class="bg-secondary shadow-lg py-4 px-6 border-b border-accent">
-        <div class="max-w-6xl mx-auto flex justify-between items-center">
+        <div class="max-w-6xl mx-auto flex justify-center items-center space-x-12">
 
             <!-- Branding -->
             <a href="/" class="text-2xl font-bold text-accent">
@@ -45,7 +45,7 @@
             </a>
 
             <!-- Jinja nav block -->
-            <div class="space-x-6">
+            <div class="flex space-x-6">
                 {% block nav_items %}
                 {% endblock %}
             </div>
