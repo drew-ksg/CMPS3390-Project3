@@ -42,6 +42,8 @@ def dashboard(request: Request):
 def login(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})   
 
-
+@app.get("/register", response_class=HTMLResponse)
+def register(request: Request):
+    return templates.TemplateResponse("register.html", {"request": request})
 
 
