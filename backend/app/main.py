@@ -6,12 +6,14 @@ from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from .database import Base, engine
 from .routes import auth_routes, user_routes, portfolio_routes
-
+from fastapi.staticfiles import StaticFiles
 
 Base.metadata.create_all(bind=engine)
 app = FastAPI(title="Stock Tracker API", version="1.0.0")
 
 templates = Jinja2Templates(directory="backend/app/templates")
+
+app.mount("/static", StaticFiles(directory="backend/app/static"), name="static")
 
 app.add_middleware(
     CORSMiddleware,
