@@ -38,6 +38,10 @@ def home(request: Request):
 def dashboard(request: Request):
     return templates.TemplateResponse("dashboard.html", {"request": request})
 
+@app.get("/login", response_class=HTMLResponse)
+def login(request: Request):
+    return templates.TemplateResponse("login.html", {"request": request})   
+
 
 
 
