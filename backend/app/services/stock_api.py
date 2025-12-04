@@ -24,7 +24,7 @@ class API:
                 detail=f"Rate limit exceeded. Try again in {seconds_left} seconds."
             )
         """
-        yesterday = (now - timedelta(days=1)).strftime("%Y-%m-%d")
+        yesterday = (now - timedelta(days=2)).strftime("%Y-%m-%d")
         url = f"{API.Base_URL}/open-close/{symbol}/{yesterday}?adjusted=true&apiKey={API.API_Key}"
         response = requests.get(url)
         if response.status_code != 200:
