@@ -13,6 +13,7 @@
         <div id="daily-change" class="text-lg text-gray-400 mt-2">+0.00 (0.00%)</div>
       </div>
       <div class="mt-2 text-sm text-gray-500">Total portfolio value (cash + positions)</div>
+      <div id="cash-balance" class="text-md text-gray-300 mt-1">$0.00 Liquid balance</div>
     </div>
   </section>
 
@@ -200,6 +201,7 @@ async function loadSummary() {
 
     document.getElementById("total-value").innerText = fmtMoney(total);
     document.getElementById("daily-change").innerText = "";
+    document.getElementById("cash-balance").innerText = fmtMoney(data.cash_balance ?? 0) + " Cash Available";
 
     return total;
   } catch (err) {
