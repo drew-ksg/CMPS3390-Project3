@@ -1,4 +1,3 @@
-# TODO: Business logic - create_user, get_user_by_username, add_transaction, get_user_transactions, get_user_holdings (aggregate BUY/from
 from sqlalchemy.orm import Session
 from ..models import User, Transaction, TransactionType
 from ..schemas import UserCreate, TransactionCreate, HoldingResponse
