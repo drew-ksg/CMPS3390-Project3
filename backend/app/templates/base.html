@@ -40,7 +40,7 @@
         <div class="max-w-6xl mx-auto flex justify-center items-center space-x-12">
 
             <!-- Branding -->
-            <a href="/" class="text-2xl font-bold text-accent">
+           <button id="logout" class="text-2xl font-bold text-accent bg-transparent border-0 cursor-pointer">
                 Stock Tracker
             </a>
 
@@ -62,6 +62,7 @@
     </main>
 
     {% block scripts %}
+    <script src="/static/js/logout.js"></script>
     {% endblock %}
 
 </body>
