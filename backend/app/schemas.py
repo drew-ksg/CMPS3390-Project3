@@ -62,4 +62,6 @@ class Trade(BaseModel):
     trade_type: str
     quantity: float
 
-
+class CashAdjustment(BaseModel):
+    amount: float
+    type: Literal["deposit", "withdraw"]

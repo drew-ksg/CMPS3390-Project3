@@ -8,7 +8,7 @@ from ..models import User
 from ..controllers.portfolio_controller import PortfolioController
 from ..services.paper_trading_service import PaperTradingService
 from ..services.stock_api import API
-from ..schemas import Trade
+from ..schemas import CashAdjustment, Trade
 
 
 router = APIRouter(prefix="/api/portfolio", tags=["portfolio"])
@@ -98,3 +98,20 @@ def execute_trade(
     """POST /api/portfolio/execute-trade"""
     result = PaperTradingService.execute_trade(db, current_user.id, trade.symbol, trade.trade_type, trade.quantity)
     return result
+
+@router.post("/adjust")
+def adjust_cash(data: CashAdjustment, user=Depends(get_current_user), db: Session = Depends(get_db)):
+
+    amount = float(data.amount)
+
+    if amount <= 0:
+        raise HTTPException(status_code=400, detail="Amount must be positive.")
+
+    if data.type == "deposit":
+        return PaperTradingService.deposit_cash(db, user.id, amount)
+
+    elif data.type == "withdraw":
+        return PaperTradingService.withdraw_cash(db, user.id, amount)
+
+    else:
+        raise HTTPException(status_code=400, detail="Invalid type.")

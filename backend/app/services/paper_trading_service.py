@@ -30,7 +30,23 @@ class PaperTradingService:
             .scalar()
         ) or 0.0
 
-        return PaperTradingService.INITIAL_CASH - buy_total + sell_total
+        deposit_total = (
+            db.query(func.sum(Transaction.price))
+            .filter(
+                Transaction.user_id == user_id, 
+                Transaction.type == TransactionType.DEPOSIT)
+            .scalar()
+        ) or 0.0
+
+        withdraw_total = (
+            db.query(func.sum(Transaction.price))
+            .filter(
+                Transaction.user_id == user_id, 
+                Transaction.type == TransactionType.WITHDRAW)
+            .scalar()
+        ) or 0.0
+
+        return PaperTradingService.INITIAL_CASH - buy_total + sell_total + deposit_total - withdraw_total
 
     @staticmethod
     def validate_buy_order(cash_balance: float, quantity: float, price: float):
@@ -98,3 +114,35 @@ class PaperTradingService:
         db.commit()
 
         return {"success": True, "message": f"{trade_type} executed successfully.", "transaction_id": new_tx.id, "price": price}
+    
+    @staticmethod
+    def deposit_cash(db, user_id: int, amount: float):
+        tx = Transaction(
+            user_id=user_id,
+            symbol="CASH",
+            type=TransactionType.DEPOSIT,
+            quantity=1,
+            price=amount
+        )
+        db.add(tx)
+        db.commit()
+        return {"success": True, "message": f"Deposited ${amount}"}
+
+
+    @staticmethod
+    def withdraw_cash(db, user_id: int, amount: float):
+        current_cash = PaperTradingService.get_cash_balance(db, user_id)
+
+        if current_cash < amount:
+            raise HTTPException(status_code=400, detail="Insufficient cash.")
+
+        tx = Transaction(
+            user_id=user_id,
+            symbol="CASH",
+            type=TransactionType.WITHDRAW,
+            quantity=1,
+            price=amount
+        )
+        db.add(tx)
+        db.commit()
+        return {"success": True, "message": f"Withdrew ${amount}"}

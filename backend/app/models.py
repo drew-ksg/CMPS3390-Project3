@@ -9,6 +9,8 @@ from .database import Base
 class TransactionType(str, PyEnum):
     BUY = "BUY"
     SELL = "SELL"
+    DEPOSIT = "DEPOSIT"
+    WITHDRAW = "WITHDRAW"
 
 class User(Base):
     __tablename__ = "users"
