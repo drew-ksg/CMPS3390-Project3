@@ -96,7 +96,6 @@
           <tr>
             <th class="py-3 px-2">Symbol</th>
             <th class="py-3 px-2">Quantity</th>
-            <th class="py-3 px-2">Avg Cost</th>
             <th class="py-3 px-2">Current</th>
             <th class="py-3 px-2">Market Value</th>
             <th class="py-3 px-2">P/L</th>
@@ -200,8 +199,9 @@ async function loadSummary() {
       (data.portfolio_value ?? 0);
 
     document.getElementById("total-value").innerText = fmtMoney(total);
-
     document.getElementById("daily-change").innerText = "";
+
+    return total;
   } catch (err) {
     console.error("loadSummary error", err);
   }
@@ -245,7 +245,6 @@ async function loadPositions() {
       tr.innerHTML = `
         <td class="py-3 px-2 font-medium text-gray-100">${p.symbol}</td>
         <td class="py-3 px-2 text-gray-300">${p.quantity}</td>
-        <td class="py-3 px-2 text-gray-300">${fmtMoney(avg)}</td>
         <td class="py-3 px-2 text-gray-300">${fmtMoney(p.current_price)}</td>
         <td class="py-3 px-2 text-gray-300">${fmtMoney(mval)}</td>
         <td class="py-3 px-2 text-gray-300" id="pl-${p.symbol}">${fmtMoney(pl)}</td>
@@ -268,7 +267,7 @@ async function loadPositions() {
 // --------------------------------------
 let portfolioChart = null;
 
-async function loadChart() {
+async function refreshChart(latestTotal) {
   try {
     const res = await fetch("/api/portfolio/performance", {
       method: "GET",
@@ -279,8 +278,15 @@ async function loadChart() {
 
     const data = await res.json();
 
+    // Use the total_value for y-axis
     const labels = data.map(d => d.date);
-    const values = data.map(d => Number(d.value ?? 0));
+    const values = data.map(d => Number(d.total_value ?? 0));
+
+    // Include the latest total (from loadSummary) as last point for real-time updates
+    if (latestTotal !== undefined) {
+      labels.push("Now");
+      values.push(latestTotal);
+    }
 
     const ctx = document.getElementById('portfolioChart').getContext('2d');
 
@@ -307,13 +313,19 @@ async function loadChart() {
         plugins: { legend: { display: false } },
         scales: {
           x: { ticks: { color: '#9ca3af' }, grid: { color: 'transparent' } },
-          y: { ticks: { color: '#9ca3af' }, grid: { color: '#1f2937' } }
+          y: { 
+            ticks: { 
+              color: '#9ca3af',
+              callback: function(value) { return "$" + value.toLocaleString(); } // show money
+            }, 
+            grid: { color: '#1f2937' } 
+          }
         }
       }
     });
 
   } catch (err) {
-    console.error("loadChart err", err);
+    console.error("refreshChart err", err);
   }
 }
 
@@ -348,6 +360,7 @@ document.getElementById("trade-submit").addEventListener("click", async () => {
     resultEl.textContent = "Trade success: " + JSON.stringify(data);
 
     refreshAll();
+
   } catch (err) {
     resultEl.textContent = "Error: " + err.message;
   }
@@ -406,10 +419,10 @@ submitCash.onclick = async () => {
 // Init
 // --------------------------------------
 async function refreshAll() {
+  const latestTotal = await loadSummary();
   await Promise.all([
-    loadSummary(),
     loadPositions(),
-    loadChart()
+    refreshChart(latestTotal)
   ]);
 }
 
